@@ -1,0 +1,19 @@
+{
+  "name": "h5-knowledgebase",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @h5-kb/web",
+    "build": "npm run build -w @h5-kb/web",
+    "lint": "npm run lint -w @h5-kb/web",
+    "test": "npm run test -w @h5-kb/web",
+    "test:e2e": "npm run test:e2e -w @h5-kb/web",
+    "ci": "npm run lint && npm run test && npm run build && npm run test:e2e",
+    "dev:proxy": "npm run proxy -w @h5-kb/api-proxy",
+    "deploy:proxy": "npm run deploy -w @h5-kb/api-proxy"
+  }
+}

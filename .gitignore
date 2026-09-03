@@ -4,12 +4,26 @@
 # Root logs
 *.log
 
-# Mantine app build/deps
-mantine-app/node_modules/
-mantine-app/dist/
-mantine-app/dist-ssr/
+# Dependencies
+node_modules/
+
+# Web app build/deps
+apps/web/node_modules/
+apps/web/dist/
+apps/web/dist-ssr/
+apps/web/playwright-report/
+apps/web/test-results/
+apps/web/blob-report/
+
+# API proxy
+services/api-proxy/node_modules/
+services/api-proxy/.vercel/
 
 # Local env
 *.local
 .env
 .env.*
+!.env.example
+
+# Legacy paths (removed in Phase 1)
+mantine-app/

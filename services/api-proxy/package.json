@@ -1,0 +1,13 @@
+{
+  "name": "@h5-kb/api-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "proxy": "vercel dev --listen 3000",
+    "deploy": "vercel deploy --prod"
+  },
+  "devDependencies": {
+    "vercel": "^59.11.2"
+  }
+}
