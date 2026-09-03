@@ -10,13 +10,15 @@ Related: [`PREVIEW_LIMITATIONS.md`](./PREVIEW_LIMITATIONS.md) · [`PERFORMANCE.m
 
 ## Automated gates (CI)
 
+Verified on PR [#1](https://github.com/romelordinarioGithub/h5-knowledgebase-site/pull/1) — Actions run [33753137682](https://github.com/romelordinarioGithub/h5-knowledgebase-site/actions/runs/33753137682) (2026-09-03). Both jobs green: Lint/unit/build (34s), Playwright E2E (45s).
+
 | Gate | Command / workflow | Pass? |
 | --- | --- | --- |
-| Lint | `npm run lint` | ☐ |
-| Unit + integration (Vitest) | `npm run test` | ☐ |
-| Production build | `npm run build` | ☐ |
-| Bundle ≤ 300 KB gzip (JS+CSS excl. fonts) | CI “Report bundle sizes” | ☐ |
-| Playwright smoke | `npm run test:e2e` | ☐ |
+| Lint | `npm run lint` | ✅ |
+| Unit + integration (Vitest) | `npm run test` | ✅ |
+| Production build | `npm run build` | ✅ |
+| Bundle ≤ 300 KB gzip (JS+CSS excl. fonts) | CI “Report bundle sizes” (~173 KB Vite gzip; under 300 KB) | ✅ |
+| Playwright smoke | `npm run test:e2e` | ✅ |
 
 PR workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 
@@ -83,9 +85,9 @@ Fill from [`PERFORMANCE.md`](./PERFORMANCE.md):
 
 | Metric | Target | Measured | Pass? |
 | --- | --- | --- | --- |
-| Warm LCP | < 2.5 s | | ☐ |
-| Catalog p95 | < 2 s | | ☐ |
-| Bundle JS+CSS gzip | ≤ 300 KB | | ☐ |
+| Warm LCP | < 2.5 s | _(staging only — not done)_ | ☐ |
+| Catalog p95 | < 2 s | _(staging only — not done)_ | ☐ |
+| Bundle JS+CSS gzip | ≤ 300 KB | **173.01 KB** (CI / Vite build 2026-09-03) | ✅ |
 
 ---
 
