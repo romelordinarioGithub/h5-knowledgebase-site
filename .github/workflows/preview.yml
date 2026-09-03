@@ -56,11 +56,13 @@ jobs:
         id: deploy
         working-directory: services/api-proxy
         run: |
-          url=$(npx vercel deploy --scope=h5-team --token="$VERCEL_TOKEN")
+          url=$(npx vercel deploy --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $url"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Comment preview URL
         if: steps.secrets.outputs.configured == 'true' && steps.deploy.outputs.url != ''
