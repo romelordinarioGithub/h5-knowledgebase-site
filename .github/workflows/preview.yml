@@ -51,36 +51,16 @@ jobs:
         if: steps.secrets.outputs.configured == 'true'
         run: npm ci
 
-      - name: Pull Vercel env (preview)
-        if: steps.secrets.outputs.configured == 'true'
-        working-directory: services/api-proxy
-        run: npx vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Build Vercel output
-        if: steps.secrets.outputs.configured == 'true'
-        working-directory: services/api-proxy
-        run: npx vercel build --token="$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
       - name: Deploy preview
         if: steps.secrets.outputs.configured == 'true'
         id: deploy
         working-directory: services/api-proxy
         run: |
-          url=$(npx vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          url=$(npx vercel deploy --scope=h5-team --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $url"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Comment preview URL
         if: steps.secrets.outputs.configured == 'true' && steps.deploy.outputs.url != ''
