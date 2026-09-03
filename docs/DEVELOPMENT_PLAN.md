@@ -655,10 +655,17 @@ Ship to production with automated deploys, rollback strategy, and team-maintaina
 
 ### Acceptance criteria
 
-- [ ] `main` branch auto-deploys frontend + proxy
-- [ ] Production URL live and linked from Google Sites
-- [ ] Team doc for sheet editors published
-- [ ] Rollback procedure documented and tested
+- [x] `main` branch auto-deploys frontend + proxy ([`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml); requires GH secrets + Pages → Actions)
+- [ ] Production URL live and linked from Google Sites — **manual cutover** ([RUNBOOK](./RUNBOOK.md#cutover-checklist-google-sites))
+- [x] Team doc for sheet editors published ([SHEET_MAINTENANCE.md](./SHEET_MAINTENANCE.md))
+- [x] Rollback procedure documented ([RUNBOOK.md](./RUNBOOK.md#rollback))
+
+**Phase 7 notes**
+
+- Proxy host is **Vercel** (not Cloudflare Wrangler) — `@smartly.io` cannot create Cloudflare accounts.
+- Uptime: [`.github/workflows/uptime.yml`](../.github/workflows/uptime.yml) every 15 minutes on `/api/catalog`.
+- Apps Script `API_VERSION` bumped to `2026-09-03-phase7-1` — **redeploy Web App as new version** before cutover.
+- JSONP remains rejected in Apps Script; production path is proxy `fetch` JSON only.
 
 ### Standalone Cursor Prompt — Phase 7
 
@@ -672,7 +679,7 @@ Goal: Production deployment with automated pipeline and team documentation.
 Implement:
 1. GitHub Actions: PR checks (lint, test, build); main branch deploy
 2. Deploy apps/web to GitHub Pages (gh-pages or GitHub Actions artifact deploy)
-3. Deploy services/api-proxy via Cloudflare Wrangler Action
+3. Deploy services/api-proxy via Vercel Action (Cloudflare Wrangler unavailable for Smartly emails)
 4. Staging environment (preview deploy on PR optional)
 5. Write README.md, docs/SHEET_MAINTENANCE.md, docs/RUNBOOK.md
 6. Cutover: update Google Sites link at sites.google.com/smartly.io/h5knowledgebase
@@ -681,6 +688,8 @@ Implement:
 
 Acceptance: Production live; CI/CD working; team can maintain sheet without engineer help; old JSONP path removed.
 ```
+
+**Implemented in repo (2026-09-03):** workflows `deploy.yml`, `preview.yml`, `uptime.yml`; docs above; `API_VERSION=2026-09-03-phase7-1`. Remaining human steps: configure GH secrets/Pages source, redeploy Apps Script, Google Sites cutover.
 
 ---
 

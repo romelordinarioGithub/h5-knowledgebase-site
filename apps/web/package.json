@@ -6,7 +6,7 @@
   "homepage": "https://romelordinarioGithub.github.io/h5-knowledgebase-site/",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cp dist/index.html dist/404.html",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",

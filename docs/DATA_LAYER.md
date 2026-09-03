@@ -69,7 +69,7 @@ Same as Apps Script payload:
 
 ```json
 {
-  "apiVersion": "2026-09-02-link-classify-1",
+  "apiVersion": "2026-09-03-phase7-1",
   "updatedAt": "2026-09-02T...",
   "count": 42,
   "rows": [ /* CatalogRow[] */ ],

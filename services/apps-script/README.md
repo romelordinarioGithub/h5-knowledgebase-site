@@ -33,7 +33,7 @@ Google Apps Script Web App that reads the H5 Knowledge Base spreadsheet and retu
 curl -s -H "X-API-Key: $API_KEY" "https://h5-kb-api-proxy.vercel.app/api/catalog" | head -c 400
 ```
 
-You should see `"apiVersion":"2026-09-03-secure-1"` and rows with `linkType`, `provider`, `embedUrl`, `canPreview`, and optional `featured`.
+You should see `"apiVersion":"2026-09-03-phase7-1"` and rows with `linkType`, `provider`, `embedUrl`, `canPreview`, and optional `featured`.
 
 ### Optional Featured column
 

@@ -1,0 +1,60 @@
+name: Uptime
+
+# Probes production catalog every 15 minutes. Fails the run (and notifies via
+# GitHub Actions failure notifications) if /api/catalog is unhealthy.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  catalog-uptime:
+    name: Probe /api/catalog
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Health check (no auth)
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/health.json -w '%{http_code}' \
+            --max-time 30 \
+            'https://h5-kb-api-proxy.vercel.app/api/health')
+          echo "health HTTP $code"
+          cat /tmp/health.json
+          test "$code" = "200"
+
+      - name: Catalog check
+        env:
+          CATALOG_URL: ${{ vars.UPTIME_CATALOG_URL }}
+          API_KEY: ${{ secrets.VITE_API_KEY }}
+        run: |
+          set -euo pipefail
+          url="${CATALOG_URL:-https://h5-kb-api-proxy.vercel.app/api/catalog}"
+          if [ -z "${API_KEY:-}" ]; then
+            echo "Repository secret VITE_API_KEY is required for catalog uptime checks"
+            exit 1
+          fi
+          code=$(curl -sS -o /tmp/catalog.json -w '%{http_code}' \
+            --max-time 55 \
+            -H "X-API-Key: $API_KEY" \
+            -H "Accept: application/json" \
+            "$url")
+          echo "catalog HTTP $code"
+          head -c 400 /tmp/catalog.json; echo
+          test "$code" = "200"
+          # Require a real payload (not an error envelope).
+          node -e '
+            const fs = require("fs");
+            const body = JSON.parse(fs.readFileSync("/tmp/catalog.json", "utf8"));
+            if (body.error) {
+              console.error("Catalog error:", body.error, body.message || "");
+              process.exit(1);
+            }
+            if (!Array.isArray(body.rows) || body.rows.length < 1) {
+              console.error("Catalog missing rows");
+              process.exit(1);
+            }
+            console.log(`ok apiVersion=${body.apiVersion} count=${body.count}`);
+          '

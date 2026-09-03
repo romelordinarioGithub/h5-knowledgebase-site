@@ -1,5 +1,5 @@
 const SPREADSHEET_ID = "1yfK2W_6Te_tDCl8pxFo1FGTOIsqzp-nvw-fk0foW8zA";
-const API_VERSION = "2026-09-03-secure-1";
+const API_VERSION = "2026-09-03-phase7-1";
 const CACHE_TTL_SECONDS = 120;
 const CACHE_KEY = `kb_payload:${API_VERSION}:${SPREADSHEET_ID}`;
 const SOURCE_SHEETS = [

@@ -28,7 +28,11 @@ npx vercel env add API_KEY                 # required for production
 ```
 
 5. Local: `npm run dev:proxy` (runs `vercel dev` on port 3000; script is named `proxy` to avoid Vercel’s recursive `dev` loop)
-6. Production: `npm run deploy:proxy`
+6. Production: `npm run deploy:proxy` (or push to `main` — [Deploy workflow](../../.github/workflows/deploy.yml) runs `vercel deploy --prebuilt --prod`)
+
+## CI/CD secrets
+
+For GitHub Actions production deploy, set repository secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` (see root `docs/RUNBOOK.md`). Local values live in `.vercel/project.json` after `vercel link` (gitignored).
 
 ## Environment
 
