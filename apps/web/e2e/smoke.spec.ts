@@ -78,9 +78,12 @@ test.describe('Knowledge base smoke', () => {
   test('opens FAQ modal from sidebar and closes with Escape', async ({ page }) => {
     await page.goto('./');
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'FAQ' }).click();
-    await expect(page.getByRole('heading', { name: 'Frequently Asked Questions' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'What is this?' })).toBeVisible();
+
+    const faqDialog = page.getByRole('dialog');
+    await expect(faqDialog.getByRole('heading', { name: 'Frequently Asked Questions' })).toBeVisible();
+    await expect(faqDialog.getByRole('button', { name: 'What is this?' })).toBeVisible();
+
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('heading', { name: 'Frequently Asked Questions' })).toHaveCount(0);
+    await expect(faqDialog).toHaveCount(0);
   });
 });

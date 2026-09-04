@@ -1,3 +1,4 @@
+import { DialogTitle } from '@headlessui/react';
 import { useId, useState, type ReactNode } from 'react';
 import { DEFAULT_FAQS, FOCUS_AGENT_EVENT } from '../lib/constants';
 import {
@@ -338,7 +339,6 @@ export function FaqModal({ open, onClose, faqs, onAskAgent }: FaqModalProps) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Frequently Asked Questions"
       size="lg"
       panelClassName="faq-modal-panel"
       className="faq-modal-root"
@@ -350,7 +350,7 @@ export function FaqModal({ open, onClose, faqs, onAskAgent }: FaqModalProps) {
               <FaqIcon name="help" />
               <span>FAQ</span>
             </div>
-            <h2 className="faq-modal-title">Frequently Asked Questions</h2>
+            <DialogTitle className="faq-modal-title">Frequently Asked Questions</DialogTitle>
             <p className="faq-modal-desc">
               Everything you need to know to use this internal knowledge base and navigate team
               workflows quickly.
