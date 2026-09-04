@@ -2066,16 +2066,6 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
-/* Google Sites edit FAB sits on the iframe bottom-right; clear space when embedded. */
-.kb-agent-panel--embedded .kb-agent-footer {
-  padding-bottom: calc(12px + 64px);
-  padding-right: calc(12px + 8px);
-}
-
-.kb-agent-panel--embedded .kb-agent-hint {
-  margin-bottom: 4px;
-}
-
 .kb-agent-composer {
   display: flex;
   flex-direction: column;
