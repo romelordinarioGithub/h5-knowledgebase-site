@@ -122,6 +122,15 @@ export function KnowledgeAgentPanel() {
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [embedded] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.self !== window.top;
+    } catch {
+      // Cross-origin frame access can throw; treat as embedded.
+      return true;
+    }
+  });
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -206,7 +215,10 @@ export function KnowledgeAgentPanel() {
   }
 
   return (
-    <aside className="kb-agent-panel" aria-label="Knowledge Agent">
+    <aside
+      className={`kb-agent-panel${embedded ? ' kb-agent-panel--embedded' : ''}`}
+      aria-label="Knowledge Agent"
+    >
       <div className="kb-agent-header">
         <div className="kb-agent-header-left">
           <div className="kb-agent-avatar" aria-hidden="true">
