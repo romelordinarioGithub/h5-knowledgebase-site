@@ -130,7 +130,7 @@ export function AppShell({
 }: AppShellProps) {
   return (
     <div className={`kb-shell${hideAgent ? ' kb-shell--no-agent' : ''}`}>
-      <aside className="kb-sidebar" aria-label="Main navigation">
+      <aside className="kb-sidebar">
         <div className="kb-sidebar-logo">
           <div className="kb-sidebar-logo-mark">H5</div>
           <div className="kb-sidebar-brand">
@@ -142,7 +142,7 @@ export function AppShell({
           </div>
         </div>
 
-        <nav className="kb-sidebar-nav">
+        <nav className="kb-sidebar-nav" aria-label="Main navigation">
           {NAV_ITEMS.map((item) => {
             const active = item.sheet === '' ? !selectedSheet : selectedSheet === item.sheet;
             return (
