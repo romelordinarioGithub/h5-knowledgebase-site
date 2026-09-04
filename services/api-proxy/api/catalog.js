@@ -60,12 +60,19 @@ export default async function handler(req, res) {
     return;
   }
 
+  const url = new URL(req.url || '/', 'http://localhost');
+  const forceRefresh =
+    url.searchParams.get('refresh') === '1' || url.searchParams.get('nocache') === '1';
+
   try {
-    const payload = await fetchCatalogWithRetry(appsScriptUrl);
+    const payload = await fetchCatalogWithRetry(appsScriptUrl, { forceRefresh });
     sendJson(req, res, payload, 200, {
-      'Cache-Control': `public, s-maxage=${CACHE_TTL_SECONDS}, stale-while-revalidate=${STALE_WHILE_REVALIDATE_SECONDS}`,
+      'Cache-Control': forceRefresh
+        ? 'no-store'
+        : `public, s-maxage=${CACHE_TTL_SECONDS}, stale-while-revalidate=${STALE_WHILE_REVALIDATE_SECONDS}`,
       'X-RateLimit-Limit': String(RATE_LIMIT_HEADERS.max),
       'X-RateLimit-Remaining': String(rate.remaining),
+      ...(forceRefresh ? { 'X-Catalog-Refresh': '1' } : {}),
     });
   } catch (error) {
     sendJson(

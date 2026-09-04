@@ -1,5 +1,5 @@
 const SPREADSHEET_ID = "1yfK2W_6Te_tDCl8pxFo1FGTOIsqzp-nvw-fk0foW8zA";
-const API_VERSION = "2026-09-03-phase7-1";
+const API_VERSION = "2026-09-04-faq-blocks-3";
 const CACHE_TTL_SECONDS = 120;
 const CACHE_KEY = `kb_payload:${API_VERSION}:${SPREADSHEET_ID}`;
 const SOURCE_SHEETS = [
@@ -13,6 +13,7 @@ const SOURCE_SHEETS = [
 /**
  * JSON-only catalog endpoint (JSONP removed in Phase 5).
  * Optional Script Property `API_KEY`: when set, require matching `?key=` query param.
+ * Pass `?refresh=1` to bypass CacheService and rebuild from the spreadsheet.
  */
 function doGet(e) {
   const params = (e && e.parameter) || {};
@@ -34,7 +35,8 @@ function doGet(e) {
     }
   }
 
-  const safeJson = getCachedPayloadJson();
+  const forceRefresh = isTruthyFlag(params.refresh) || isTruthyFlag(params.nocache);
+  const safeJson = forceRefresh ? buildFreshPayloadJson_() : getCachedPayloadJson();
   return ContentService.createTextOutput(safeJson).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -47,6 +49,24 @@ function getConfiguredApiKey_() {
   }
 }
 
+/** Rebuild payload and replace CacheService entry. */
+function buildFreshPayloadJson_() {
+  try {
+    CacheService.getScriptCache().remove(CACHE_KEY);
+  } catch (error) {
+    // Continue without cache clear.
+  }
+  const safeJson = buildPayloadJson();
+  try {
+    if (safeJson && safeJson.length <= 95000) {
+      CacheService.getScriptCache().put(CACHE_KEY, safeJson, CACHE_TTL_SECONDS);
+    }
+  } catch (error) {
+    // Cache failures should not block response.
+  }
+  return safeJson;
+}
+
 function getCachedPayloadJson() {
   const cache = CacheService.getScriptCache();
 
@@ -57,17 +77,7 @@ function getCachedPayloadJson() {
     // Continue without cache.
   }
 
-  const safeJson = buildPayloadJson();
-
-  try {
-    if (safeJson && safeJson.length <= 95000) {
-      cache.put(CACHE_KEY, safeJson, CACHE_TTL_SECONDS);
-    }
-  } catch (error) {
-    // Cache failures should not block response.
-  }
-
-  return safeJson;
+  return buildFreshPayloadJson_();
 }
 
 function buildPayloadJson() {
@@ -242,8 +252,6 @@ function readFaqItems(spreadsheet) {
   if (!sheet) return [];
 
   const values = sheet.getDataRange().getDisplayValues();
-  const richValues = sheet.getDataRange().getRichTextValues();
-  const formulas = sheet.getDataRange().getFormulas();
   if (!values || values.length < 2) return [];
 
   const headers = (values[0] || []).map((header) => String(header || "").trim());
@@ -251,6 +259,172 @@ function readFaqItems(spreadsheet) {
   headers.forEach((header, index) => {
     if (header) headerIndexByLower.set(header.toLowerCase(), index);
   });
+
+  // Structured FAQ tab: FAQ ID | Question | Block Order | Block Type | Title | Content | Variant
+  if (isStructuredFaqSheet_(headerIndexByLower)) {
+    return readStructuredFaqItems_(values, headerIndexByLower);
+  }
+
+  return readLegacyFaqItems_(spreadsheet, sheet, values, headerIndexByLower);
+}
+
+/** @param {Map<string, number>} headerIndexByLower */
+function isStructuredFaqSheet_(headerIndexByLower) {
+  const hasId = findHeaderIndex(headerIndexByLower, ["faq id", "faq_id", "id"]) > -1;
+  const hasBlockType = findHeaderIndex(headerIndexByLower, [
+    "block type",
+    "block_type",
+    "blocktype",
+    "type",
+  ]) > -1;
+  const hasBlockOrder = findHeaderIndex(headerIndexByLower, [
+    "block order",
+    "block_order",
+    "blockorder",
+    "order",
+  ]) > -1;
+  return hasId && hasBlockType && hasBlockOrder;
+}
+
+/**
+ * @param {string[][]} values
+ * @param {Map<string, number>} headerIndexByLower
+ */
+function readStructuredFaqItems_(values, headerIndexByLower) {
+  const idIndex = findHeaderIndex(headerIndexByLower, ["faq id", "faq_id", "id"]);
+  const questionIndex = findHeaderIndex(headerIndexByLower, [
+    "question",
+    "faq question",
+    "faq",
+    "questions",
+    "q",
+  ]);
+  const orderIndex = findHeaderIndex(headerIndexByLower, [
+    "block order",
+    "block_order",
+    "blockorder",
+    "order",
+  ]);
+  const typeIndex = findHeaderIndex(headerIndexByLower, [
+    "block type",
+    "block_type",
+    "blocktype",
+    "type",
+  ]);
+  const titleIndex = findHeaderIndex(headerIndexByLower, ["title", "label", "heading"]);
+  const contentIndex = findHeaderIndex(headerIndexByLower, [
+    "content",
+    "body",
+    "text",
+    "value",
+    "answer",
+  ]);
+  const variantIndex = findHeaderIndex(headerIndexByLower, ["variant", "style", "tone"]);
+
+  /** @type {Map<string, { id: string, question: string, blocks: Object[] }>} */
+  const byId = new Map();
+
+  values.slice(1).forEach((entry) => {
+    const id = idIndex > -1 ? String(entry[idIndex] || "").trim() : "";
+    const question =
+      questionIndex > -1 ? String(entry[questionIndex] || "").trim() : "";
+    const typeRaw = typeIndex > -1 ? String(entry[typeIndex] || "").trim() : "";
+    const type = normalizeFaqBlockType_(typeRaw);
+    if (!id || !question || !type) return;
+
+    const orderRaw = orderIndex > -1 ? String(entry[orderIndex] || "").trim() : "";
+    const orderNum = Number(orderRaw);
+    const title = titleIndex > -1 ? String(entry[titleIndex] || "").trim() : "";
+    const content = contentIndex > -1 ? String(entry[contentIndex] || "").trim() : "";
+    const variant =
+      variantIndex > -1
+        ? String(entry[variantIndex] || "")
+            .trim()
+            .toLowerCase()
+        : "";
+
+    const block = {
+      order: Number.isFinite(orderNum) ? orderNum : 0,
+      type: type,
+      title: title,
+      content: content,
+      variant: variant,
+    };
+
+    const existing = byId.get(id);
+    if (existing) {
+      existing.blocks.push(block);
+      if (!existing.question) existing.question = question;
+    } else {
+      byId.set(id, { id: id, question: question, blocks: [block] });
+    }
+  });
+
+  const out = [];
+  byId.forEach((item) => {
+    item.blocks.sort((a, b) => a.order - b.order);
+    out.push({
+      id: item.id,
+      question: item.question,
+      blocks: item.blocks,
+      answer: plainAnswerFromFaqBlocks_(item.blocks),
+    });
+  });
+
+  return out.slice(0, 40);
+}
+
+/** @param {string} raw */
+function normalizeFaqBlockType_(raw) {
+  const value = String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  const allowed = {
+    heading: "heading",
+    paragraph: "paragraph",
+    key_value: "key_value",
+    keyvalue: "key_value",
+    callout: "callout",
+    list: "list",
+    link: "link",
+  };
+  return allowed[value] || "";
+}
+
+/** @param {Object[]} blocks */
+function plainAnswerFromFaqBlocks_(blocks) {
+  return (blocks || [])
+    .map((block) => {
+      if (block.type === "key_value") {
+        return [block.title, block.content].filter(Boolean).join(": ");
+      }
+      if (block.type === "callout" || block.type === "heading" || block.type === "link") {
+        return [block.title, block.content].filter(Boolean).join(" — ");
+      }
+      if (block.type === "list") {
+        return String(block.content || "")
+          .split(/\r?\n/)
+          .map((line) => String(line || "").trim())
+          .filter(Boolean)
+          .join("\n");
+      }
+      return block.content || block.title || "";
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+/**
+ * Legacy FAQ tab: Question | Answer (optional rich-text links).
+ * @param {GoogleAppsScript.Spreadsheet.Spreadsheet} spreadsheet
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+ * @param {string[][]} values
+ * @param {Map<string, number>} headerIndexByLower
+ */
+function readLegacyFaqItems_(spreadsheet, sheet, values, headerIndexByLower) {
+  const richValues = sheet.getDataRange().getRichTextValues();
+  const formulas = sheet.getDataRange().getFormulas();
 
   const questionKeys = [
     "question",
@@ -268,20 +442,23 @@ function readFaqItems(spreadsheet) {
   ];
   const questionIndex = findHeaderIndex(headerIndexByLower, questionKeys);
   const answerIndex = findHeaderIndex(headerIndexByLower, answerKeys);
-  const apiLinkSpansByRow = answerIndex > -1
-    ? readFaqLinkSpansFromSheetsApi(spreadsheet.getId(), sheet.getName(), answerIndex)
-    : [];
+  const apiLinkSpansByRow =
+    answerIndex > -1
+      ? readFaqLinkSpansFromSheetsApi(spreadsheet.getId(), sheet.getName(), answerIndex)
+      : [];
 
   const out = [];
 
   values.slice(1).forEach((entry, rowOffset) => {
     const richEntry = richValues[rowOffset + 1] || [];
-    const question = questionIndex > -1
-      ? String(entry[questionIndex] || "").trim()
-      : readCell(entry, headerIndexByLower, questionKeys) || String(entry[0] || "").trim();
-    const answer = answerIndex > -1
-      ? String(entry[answerIndex] || "").trim()
-      : readCell(entry, headerIndexByLower, answerKeys) || String(entry[1] || "").trim();
+    const question =
+      questionIndex > -1
+        ? String(entry[questionIndex] || "").trim()
+        : readCell(entry, headerIndexByLower, questionKeys) || String(entry[0] || "").trim();
+    const answer =
+      answerIndex > -1
+        ? String(entry[answerIndex] || "").trim()
+        : readCell(entry, headerIndexByLower, answerKeys) || String(entry[1] || "").trim();
     const richAnswer = answerIndex > -1 ? richEntry[answerIndex] : null;
     const formulaEntry = formulas[rowOffset + 1] || [];
     const answerFormula = answerIndex > -1 ? String(formulaEntry[answerIndex] || "") : "";

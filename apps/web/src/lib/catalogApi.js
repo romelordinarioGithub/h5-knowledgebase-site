@@ -19,12 +19,22 @@ function buildHeaders() {
 }
 
 /**
+ * @param {{ force?: boolean }} [options]
  * @returns {Promise<CatalogPayload>}
  */
-export async function fetchCatalog() {
-  const url = getCatalogApiUrl();
-  const response = await fetch(url, {
+export async function fetchCatalog(options = {}) {
+  const base = getCatalogApiUrl();
+  const url = new URL(base, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  // Omit cache-busting on normal loads so Vercel CDN (s-maxage) can serve warm responses.
+  // Force refresh bypasses CDN + Apps Script CacheService via refresh=1 + no-store.
+  if (options.force) {
+    url.searchParams.set('refresh', '1');
+    url.searchParams.set('ts', String(Date.now()));
+  }
+
+  const response = await fetch(url.toString(), {
     method: 'GET',
+    cache: options.force ? 'no-store' : 'default',
     headers: {
       Accept: 'application/json',
       ...buildHeaders(),

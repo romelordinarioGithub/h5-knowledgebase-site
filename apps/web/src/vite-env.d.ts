@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_CATALOG_API_URL?: string;
+  readonly VITE_CHAT_API_URL?: string;
   readonly VITE_API_KEY?: string;
   readonly VITE_API_PROXY_TARGET?: string;
 }

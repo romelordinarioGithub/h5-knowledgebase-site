@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SOURCE_SHEETS } from '@h5-kb/shared';
-import { getPayloadTimestamp, resolveCatalogPayload, useCatalog } from './useCatalog.js';
-import { CATALOG_QUERY_KEY } from '../lib/catalogApi.js';
+import { getPayloadTimestamp, resolveCatalogPayload, useCatalog, useRefreshCatalog } from './useCatalog.js';
 import { formatRelativeTime, loadCachedCatalog } from '../lib/catalogCache.js';
 import { DEFAULT_FAQS } from '../lib/constants';
 import { initializeFeaturedRanking, preserveFeaturedRows } from '../lib/featured';
+import { normalizeFaqs } from '../lib/faq';
 import { linkTypeLabel } from '../lib/linkTypes';
 import {
   SEARCH_DEBOUNCE_MS,
@@ -28,9 +27,11 @@ export function useCatalogView() {
   const [searchParams, setSearchParams] = useSearchParams();
   const cardsRef = useRef<HTMLElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const queryClient = useQueryClient();
   const [cachedFallback] = useState(() => loadCachedCatalog());
   const errorNotifiedRef = useRef(false);
+  const refreshCatalog = useRefreshCatalog();
+  const [manualRefreshing, setManualRefreshing] = useState(false);
+  const refreshInFlightRef = useRef(false);
 
   const catalogQuery = useCatalog();
   const activePayload = resolveCatalogPayload(catalogQuery.data, cachedFallback);
@@ -38,10 +39,13 @@ export function useCatalogView() {
     () => (activePayload?.rows || []) as CatalogRow[],
     [activePayload]
   );
-  const faqs: FaqItem[] =
-    Array.isArray(activePayload?.faqs) && activePayload.faqs.length
-      ? activePayload.faqs
-      : DEFAULT_FAQS;
+  const faqs: FaqItem[] = useMemo(() => {
+    const raw =
+      Array.isArray(activePayload?.faqs) && activePayload.faqs.length
+        ? activePayload.faqs
+        : DEFAULT_FAQS;
+    return normalizeFaqs(raw);
+  }, [activePayload]);
 
   const searchFromUrl = searchParams.get('q') || '';
   const selectedSheet = category ? decodeURIComponent(category) : searchParams.get('sheet') || '';
@@ -221,12 +225,21 @@ export function useCatalogView() {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
-      const target = event.target as HTMLElement | null;
-      const tag = target?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
-        return;
+      const isModK =
+        (event.key === 'k' || event.key === 'K') && (event.metaKey || event.ctrlKey) && !event.altKey;
+      const isSlash =
+        event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey;
+
+      if (!isModK && !isSlash) return;
+
+      if (isSlash) {
+        const target = event.target as HTMLElement | null;
+        const tag = target?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+          return;
+        }
       }
+
       event.preventDefault();
       searchInputRef.current?.focus();
       searchInputRef.current?.select();
@@ -280,8 +293,21 @@ export function useCatalogView() {
     navigate(`/doc/${encodeURIComponent(row.id)}`);
   }
 
-  function refresh() {
-    queryClient.invalidateQueries({ queryKey: CATALOG_QUERY_KEY });
+  async function refresh() {
+    if (refreshInFlightRef.current) return;
+    refreshInFlightRef.current = true;
+    setManualRefreshing(true);
+    try {
+      await refreshCatalog();
+      toast.success('Catalog refreshed from spreadsheet');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to refresh catalog', {
+        description: 'Load Error',
+      });
+    } finally {
+      refreshInFlightRef.current = false;
+      setManualRefreshing(false);
+    }
   }
 
   return {
@@ -307,7 +333,7 @@ export function useCatalogView() {
     linkTypeOptions,
     statusText,
     topicCounts,
-    isFetching: catalogQuery.isFetching,
+    isFetching: catalogQuery.isFetching || manualRefreshing,
     updateParam,
     handleSheetChange,
     handleTopicClick,

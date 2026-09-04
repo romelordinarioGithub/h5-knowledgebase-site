@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  clearCachedCatalog,
   formatRelativeTime,
   loadCachedCatalog,
   saveCachedCatalog,
@@ -49,6 +50,13 @@ describe('catalogCache', () => {
     const loaded = loadCachedCatalog();
     expect(loaded?.rows[0].id).toBe('roundtrip');
     expect(typeof loaded?.cachedAt).toBe('number');
+  });
+
+  it('clearCachedCatalog removes the entry', () => {
+    saveCachedCatalog(makeCatalogPayload());
+    expect(loadCachedCatalog()).not.toBeNull();
+    clearCachedCatalog();
+    expect(loadCachedCatalog()).toBeNull();
   });
 
   it('resolveCatalogPayload prefers live rows, then cache fallback', () => {

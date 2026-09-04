@@ -37,6 +37,7 @@ export default defineConfig(({ mode }) => {
       // Keep unit tests independent of developer .env catalog URLs.
       env: {
         VITE_CATALOG_API_URL: '',
+        VITE_CHAT_API_URL: '',
         VITE_API_KEY: '',
       },
     },

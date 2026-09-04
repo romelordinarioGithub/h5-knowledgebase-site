@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchCatalog, CATALOG_QUERY_KEY } from '../lib/catalogApi.js';
 import { loadCachedCatalog, saveCachedCatalog } from '../lib/catalogCache.js';
 
@@ -30,6 +30,27 @@ export function useCatalog(options = {}) {
     initialData: cachedBootstrap ?? undefined,
     initialDataUpdatedAt: cachedBootstrap?.cachedAt,
   });
+}
+
+/**
+ * Force-refresh catalog from the spreadsheet (bypasses CDN + Apps Script cache).
+ * @returns {() => Promise<unknown>}
+ */
+export function useRefreshCatalog() {
+  const queryClient = useQueryClient();
+  return async () => {
+    // Keep last-known-good localStorage until a successful response replaces it.
+    // Clearing before fetch would leave no offline fallback if Apps Script/proxy fails.
+    return queryClient.fetchQuery({
+      queryKey: CATALOG_QUERY_KEY,
+      queryFn: async () => {
+        const payload = await fetchCatalog({ force: true });
+        saveCachedCatalog(payload);
+        return payload;
+      },
+      staleTime: 0,
+    });
+  };
 }
 
 /**

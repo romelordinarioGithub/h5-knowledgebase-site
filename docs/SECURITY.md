@@ -13,9 +13,12 @@
 | Proxy `API_KEY` (`X-API-Key`) | **Required for production** | Set in Vercel env; mirror as `VITE_API_KEY` for the static frontend |
 | Apps Script Script Property `API_KEY` | Recommended | Proxy sends matching `?key=` via `APPS_SCRIPT_API_KEY` |
 | Cloudflare Access | N/A | `@smartly.io` accounts cannot create Cloudflare; API key + rate limit substitute |
-| Rate limiting | Enabled | Default 60 req/min/IP on `/api/catalog` (`RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`) |
+| Rate limiting | Enabled | Default 60 req/min/IP on `/api/catalog` and `/api/chat` (`RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`) |
 | CORS allowlist | Recommended | Set `CORS_ORIGINS` to the GitHub Pages origin(s) |
+| Gemini chat key | Server only | `GEMINI_API_KEY` on Vercel / proxy `.env.local` — never `VITE_*` |
 | JSONP | **Removed** | Apps Script rejects `?callback=` with JSON error |
+
+> **Gemini free tier:** Google may use free-tier prompts to improve products. Do not send secrets or highly sensitive data through the Knowledge Agent until IT approves a paid / no-training path.
 
 > **Note on `VITE_API_KEY`:** Any key shipped in the static frontend is extractable from the JS bundle. Treat it as a soft gate against casual abuse, not a secret. Prefer combining it with `CORS_ORIGINS`, Apps Script `API_KEY` (server-side only via the proxy), and rate limiting. For stronger SSO-style access, host the SPA behind an internal IdP / reverse proxy later.
 
@@ -26,10 +29,12 @@
 APPS_SCRIPT_URL=https://script.google.com/.../exec
 API_KEY=<long random secret>
 APPS_SCRIPT_API_KEY=<same as Apps Script Script Property API_KEY>
+GEMINI_API_KEY=<Google AI Studio key>
 CORS_ORIGINS=https://romelordinarioGithub.github.io
 
 # Frontend (apps/web build / GH Pages)
 VITE_CATALOG_API_URL=https://h5-kb-api-proxy.vercel.app/api/catalog
+VITE_CHAT_API_URL=https://h5-kb-api-proxy.vercel.app/api/chat
 VITE_API_KEY=<same as Vercel API_KEY>
 ```
 

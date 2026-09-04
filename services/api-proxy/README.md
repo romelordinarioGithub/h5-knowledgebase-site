@@ -7,6 +7,7 @@ Edge-cached proxy for the Apps Script catalog JSON endpoint. Replaces the Cloudf
 | Path | Method | Description |
 |------|--------|-------------|
 | `/api/catalog` | GET | Normalized catalog payload |
+| `/api/chat` | POST | Knowledge Agent reply via Gemini (`GEMINI_API_KEY`) |
 | `/api/health` | GET | Liveness check (no API key required) |
 
 ## Setup
@@ -20,12 +21,40 @@ Edge-cached proxy for the Apps Script catalog JSON endpoint. Replaces the Cloudf
 cd services/api-proxy
 npx vercel env add APPS_SCRIPT_URL
 npx vercel env add API_KEY                 # required for production
+npx vercel env add GEMINI_API_KEY          # required for /api/chat (Google AI Studio)
 # optional:
 # npx vercel env add APPS_SCRIPT_API_KEY   # must match Apps Script Script Property API_KEY
+# npx vercel env add GEMINI_MODEL          # default gemini-3.6-flash
+# npx vercel env add GEMINI_FALLBACK_MODEL # default gemini-3.5-flash-lite (used on high demand)
 # npx vercel env add CORS_ORIGINS          # comma-separated, e.g. https://romelordinarioGithub.github.io
 # npx vercel env add RATE_LIMIT_MAX        # default 60 req/min/IP
 # npx vercel env add RATE_LIMIT_WINDOW_MS  # default 60000
 ```
+
+### Chat (`POST /api/chat`)
+
+Body:
+
+```json
+{
+  "messages": [{ "role": "user", "content": "How do I set up a studio workflow?" }],
+  "articles": [
+    { "id": "…", "title": "Studio Setup Reference Guide", "category": "Studio Setup", "tags": ["studio"] }
+  ]
+}
+```
+
+`articles` is optional compact KB context from the web app (authoritative cards stay client-side).
+
+Response:
+
+```json
+{ "reply": "…", "model": "gemini-3.6-flash", "fallbackUsed": false }
+```
+
+On high demand / rate limits, the proxy retries with `gemini-3.5-flash-lite` (or `GEMINI_FALLBACK_MODEL`) and may return `"fallbackUsed": true`.
+
+Local: add `GEMINI_API_KEY` to `services/api-proxy/.env.local` (gitignored). Never expose it as a `VITE_*` variable.
 
 5. Local: `npm run dev:proxy` (runs `vercel dev` on port 3000; script is named `proxy` to avoid Vercel’s recursive `dev` loop)
 6. Production: `npm run deploy:proxy` (or push to `main` — [Deploy workflow](../../.github/workflows/deploy.yml) runs `vercel deploy --prebuilt --prod`)
@@ -40,6 +69,9 @@ For GitHub Actions production deploy, set repository secrets `VERCEL_TOKEN`, `VE
 |----------|----------|-------------|
 | `APPS_SCRIPT_URL` | Yes | Apps Script `/exec` URL (JSON mode) |
 | `API_KEY` | **Yes for production** | Clients must send matching `X-API-Key` |
+| `GEMINI_API_KEY` | **Yes for `/api/chat`** | Google AI Studio / Gemini API key (server only) |
+| `GEMINI_MODEL` | No | Model id (default `gemini-3.6-flash`) |
+| `GEMINI_FALLBACK_MODEL` | No | Fallback on high demand (default `gemini-3.5-flash-lite`) |
 | `APPS_SCRIPT_API_KEY` | Recommended | Forwarded as `?key=` to Apps Script when Script Property `API_KEY` is set |
 | `CORS_ORIGINS` | Recommended | Comma-separated browser origins allowed (defaults to `*` if unset) |
 | `RATE_LIMIT_MAX` | No | Max requests per IP per window (default `60`) |

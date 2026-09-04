@@ -35,10 +35,9 @@ test.describe('Knowledge base smoke', () => {
     await expect(resultCard(page, 'Alpha Google Doc')).toHaveCount(0);
   });
 
-  test('applies source sheet filter', async ({ page }) => {
+  test('applies source sheet filter from topic navigation', async ({ page }) => {
     await page.goto('./');
-    await page.getByRole('button', { name: 'Source Sheet' }).click();
-    await page.getByRole('option', { name: 'Build Guides' }).click();
+    await page.getByRole('button', { name: 'Build Guides' }).first().click();
 
     await expect(page).toHaveURL(/Build%20Guides|sheet=Build/);
     await expect(resultCard(page, 'Alpha Google Doc')).toBeVisible();
@@ -62,17 +61,26 @@ test.describe('Knowledge base smoke', () => {
   test('opens unsupported SharePoint doc and shows fallback UI', async ({ page }) => {
     await page.goto('./doc/doc-sharepoint');
     await expect(page.getByRole('heading', { name: 'Gamma SharePoint File' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Preview not supported' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Preview unavailable' })).toBeVisible();
     await expect(page.getByRole('link', { name: /Open Original/i }).first()).toBeVisible();
     await expect(page.locator('iframe')).toHaveCount(0);
   });
 
   test('opens external tool and shows fallback UI', async ({ page }) => {
     await page.goto('./doc/doc-external');
-    await expect(page.getByRole('heading', { name: 'Preview not supported' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Preview unavailable' })).toBeVisible();
     await expect(page.getByRole('link', { name: /Open Original/i }).first()).toHaveAttribute(
       'href',
       'https://example.com/tool'
     );
+  });
+
+  test('opens FAQ modal from sidebar and closes with Escape', async ({ page }) => {
+    await page.goto('./');
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'FAQ' }).click();
+    await expect(page.getByRole('heading', { name: 'Frequently Asked Questions' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'What is this?' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('heading', { name: 'Frequently Asked Questions' })).toHaveCount(0);
   });
 });

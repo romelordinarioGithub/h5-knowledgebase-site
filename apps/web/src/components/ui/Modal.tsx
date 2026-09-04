@@ -27,19 +27,22 @@ export function Modal({
 }: ModalProps) {
   return (
     <Dialog open={open} onClose={onClose} className={cn('relative z-[100]', className)}>
-      <div className="fixed inset-0 bg-[rgba(23,18,44,0.56)]" aria-hidden="true" />
-      <div className="fixed inset-0 overflow-y-auto p-4">
+      <div
+        className="fixed inset-0 bg-[rgba(25,27,35,0.45)] backdrop-blur-[3px]"
+        aria-hidden="true"
+      />
+      <div className="fixed inset-0 overflow-y-auto p-4 sm:p-6">
         <div className="flex min-h-full items-center justify-center">
           <DialogPanel
             className={cn(
               'relative w-full bg-surface shadow-card',
-              size === 'lg' ? 'max-w-[min(1100px,94vw)] rounded-[22px]' : 'max-w-[min(600px,92vw)] rounded-[18px]',
+              size === 'lg'
+                ? 'max-w-[min(860px,94vw)] rounded-[1.5rem]'
+                : 'max-w-[min(600px,92vw)] rounded-[18px]',
               panelClassName
             )}
           >
-            {title ? (
-              <DialogTitle className="sr-only">{title}</DialogTitle>
-            ) : null}
+            {title ? <DialogTitle className="sr-only">{title}</DialogTitle> : null}
             {children}
           </DialogPanel>
         </div>

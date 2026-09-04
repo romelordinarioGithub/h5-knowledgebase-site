@@ -27,7 +27,22 @@ export function makeCatalogPayload(
     updatedAt: '2026-09-03T00:00:00.000Z',
     count: rows.length,
     rows,
-    faqs: [{ question: 'What is this?', answer: 'A knowledge base.' }],
+    faqs: [
+      {
+        id: 'FAQ-TEST',
+        question: 'What is this?',
+        answer: 'A knowledge base.',
+        blocks: [
+          {
+            order: 1,
+            type: 'paragraph',
+            title: '',
+            content: 'A knowledge base.',
+            variant: '',
+          },
+        ],
+      },
+    ],
     ...overrides,
   };
 }

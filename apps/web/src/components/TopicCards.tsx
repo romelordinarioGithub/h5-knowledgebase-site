@@ -9,16 +9,38 @@ type TopicCardsProps = {
   loading?: boolean;
 };
 
+function getCountLabel(sheetName: string, count: number): string {
+  const units: Record<string, string> = {
+    'Build Guides': 'Articles',
+    'Master Templates': 'Templates',
+    'Studio Setup': 'Docs',
+    'Process Docs': 'Workflows',
+    'Internal Tools': 'Utilities',
+  };
+  const unit = units[sheetName] || 'Items';
+  return count > 0 ? `${count} ${unit}` : unit;
+}
+
 export function TopicCards({ counts, selectedSheet, onSelect, loading }: TopicCardsProps) {
   return (
-    <section className="mt-1.5">
-      <h2 className="m-0 text-center text-[2rem] text-primary">Browse All Topics</h2>
-      <div className="mt-[26px] grid grid-cols-5 gap-[18px] py-1 pb-2 max-[820px]:flex max-[820px]:flex-nowrap max-[820px]:gap-3.5 max-[820px]:overflow-x-auto max-[820px]:pb-2 max-[820px]:[scrollbar-width:thin]">
+    <section aria-label="Browse all topics">
+      <div className="kb-section-header">
+        <div>
+          <h2 className="kb-section-title">Browse All Topics</h2>
+          <p className="kb-section-sub">
+            Core knowledge modules structured for swift onboarding and day-to-day execution
+          </p>
+        </div>
+        <span className="kb-section-chip">{SOURCE_SHEETS.length} Primary Topics</span>
+      </div>
+
+      <div className="kb-topics-grid">
         {loading
-          ? Array.from({ length: 5 }, (_, index) => (
+          ? Array.from({ length: 5 }, (_, i) => (
               <div
-                key={`topic-skel-${index}`}
-                className="skeleton min-h-[210px] min-w-[250px] rounded-md max-[820px]:shrink-0"
+                key={`topic-skel-${i}`}
+                className="skeleton"
+                style={{ minHeight: '120px', borderRadius: '12px' }}
               />
             ))
           : SOURCE_SHEETS.map((topic) => {
@@ -29,27 +51,44 @@ export function TopicCards({ counts, selectedSheet, onSelect, loading }: TopicCa
               return (
                 <article
                   key={topic.gid}
-                  className={cn('topic-card max-[820px]:min-w-[250px] max-[820px]:shrink-0', active && 'is-active')}
+                  className={cn('kb-topic-card', active && 'is-active')}
                   role="button"
                   tabIndex={0}
                   aria-pressed={active}
                   onClick={() => onSelect(topic.name)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
                       onSelect(topic.name);
                     }
                   }}
                 >
-                  <div className="mx-auto mb-3.5 grid size-[34px] place-items-center text-[#111]">
-                    <Icon className="size-6" />
+                  <div>
+                    <div className="kb-topic-icon-wrap">
+                      <Icon style={{ width: '17px', height: '17px' }} />
+                    </div>
+                    <h3 className="kb-topic-title">{topic.name}</h3>
+                    <p className="kb-topic-desc">{getTopicSubtitle(topic.name, count)}</p>
                   </div>
-                  <h3 className="topic-title m-0 text-[0.92rem] leading-[1.25] font-bold text-[#111]">
-                    {topic.name}
-                  </h3>
-                  <p className="mt-2.5 mb-0 text-[0.74rem] leading-[1.35] text-[#5c5c66]">
-                    {getTopicSubtitle(topic.name, count)}
-                  </p>
+
+                  <div className="kb-topic-footer">
+                    <span className="kb-topic-count">{getCountLabel(topic.name, count)}</span>
+                    <svg
+                      className="kb-topic-arrow"
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </div>
                 </article>
               );
             })}

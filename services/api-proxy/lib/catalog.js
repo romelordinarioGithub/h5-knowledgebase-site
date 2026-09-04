@@ -25,7 +25,7 @@ export const SECURITY_HEADERS = {
 export function applyCors(req, res) {
   const origin = resolveCorsOrigin(req);
   res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key');
   res.setHeader('Access-Control-Max-Age', '86400');
   if (origin !== '*') {
@@ -68,13 +68,14 @@ export function sendCorsPreflight(req, res) {
 
 /**
  * @param {string} appsScriptUrl
+ * @param {{ forceRefresh?: boolean }} [options]
  */
-export async function fetchCatalogWithRetry(appsScriptUrl) {
+export async function fetchCatalogWithRetry(appsScriptUrl, options = {}) {
   let lastError;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt += 1) {
     try {
-      return await fetchCatalogOnce(appsScriptUrl);
+      return await fetchCatalogOnce(appsScriptUrl, options);
     } catch (error) {
       lastError = error;
       if (attempt < MAX_RETRIES - 1) {
@@ -88,10 +89,14 @@ export async function fetchCatalogWithRetry(appsScriptUrl) {
 
 /**
  * @param {string} appsScriptUrl
+ * @param {{ forceRefresh?: boolean }} [options]
  */
-async function fetchCatalogOnce(appsScriptUrl) {
+async function fetchCatalogOnce(appsScriptUrl, options = {}) {
   const upstreamUrl = new URL(appsScriptUrl);
   upstreamUrl.searchParams.set('ts', String(Date.now()));
+  if (options.forceRefresh) {
+    upstreamUrl.searchParams.set('refresh', '1');
+  }
 
   // Apps Script web apps only reliably see query params (not custom headers).
   const upstreamKey = process.env.APPS_SCRIPT_API_KEY;

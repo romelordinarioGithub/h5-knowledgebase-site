@@ -26,10 +26,34 @@ export type CatalogRow = {
   canPreview?: boolean;
 };
 
+/** Structured FAQ block types from the spreadsheet (presentation-agnostic). */
+export type FaqBlockType =
+  | 'heading'
+  | 'paragraph'
+  | 'key_value'
+  | 'callout'
+  | 'list'
+  | 'link';
+
+export type FaqBlock = {
+  order: number;
+  type: FaqBlockType;
+  title: string;
+  content: string;
+  /** Presentation hint only: warning | info | neutral | bullet | ordered | highlight | … */
+  variant: string;
+};
+
 export type FaqItem = {
+  /** Stable id from spreadsheet (e.g. FAQ-001). */
+  id?: string;
   question: string;
+  /** Plain-text fallback / legacy answers. */
   answer: string;
+  /** Legacy rich-text HTML from Sheets (sanitized before render). */
   answerHtml?: string;
+  /** Structured blocks; preferred over answer/answerHtml when present. */
+  blocks?: FaqBlock[];
 };
 
 export type CatalogPayload = {

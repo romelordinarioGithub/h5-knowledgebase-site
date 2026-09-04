@@ -5,12 +5,12 @@ export const DEFAULT_FAQS: FaqItem[] = [
   {
     question: 'How do I search effectively?',
     answer:
-      'Type keywords from titles, tags, authors, or source sheets. Press / to focus search. Matches are highlighted in results.',
+      'Type keywords from titles, tags, authors, or source sheets. Press / or ⌘K (Ctrl+K) to focus search. Matches are highlighted in results.',
   },
   {
-    question: 'How do filters work?',
+    question: 'How do categories and search work?',
     answer:
-      'Combine Source Sheet, Document Title, Link Type, and Sort. Filters sync to the URL so you can share filtered views.',
+      'Use the sidebar or topic cards to browse by category, search from the hero, and sort the article list. Shareable URLs keep your category and search state.',
   },
   {
     question: 'Where do featured articles come from?',
@@ -36,3 +36,6 @@ export const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 ];
 
 export const VIRTUALIZE_THRESHOLD = 100;
+
+/** Dispatched when FAQ "Ask Agent" should focus the Knowledge Agent composer. */
+export const FOCUS_AGENT_EVENT = 'kb:focus-agent';

@@ -109,7 +109,25 @@ Until that ships, rows on an unregistered tab will not appear on the site.
 
 ## FAQ content
 
-Update FAQ answers in the sheet so they mention:
+The **FAQ** tab uses a structured block model (preferred):
+
+| Column | Purpose |
+| --- | --- |
+| FAQ ID | Groups rows into one accordion item (e.g. `FAQ-001`) |
+| Question | Accordion title |
+| Block Order | Sort order within that FAQ (1, 2, 3…) |
+| Block Type | `heading`, `paragraph`, `key_value`, `callout`, `list`, or `link` |
+| Title | Label / callout heading / link label |
+| Content | Body text, value, list lines (newline-separated), or URL |
+| Variant | Optional hint only: `warning`, `info`, `neutral`, `bullet`, `ordered`, `highlight` |
+
+For **list** blocks, either put all items in one Content cell (newline-separated) **or** use one row per item with the same Variant (`bullet` or `ordered`). Consecutive `list` rows are merged into one list in the UI so ordered lists number 1, 2, 3… correctly.
+
+Do **not** put HTML, CSS, SVG, or icon class names in cells. The site picks icons and styling from Block Type + Variant.
+
+Legacy tabs with only **Question** / **Answer** still work (rendered as a single paragraph).
+
+Update FAQ answers so they mention:
 
 - Browse and search on the knowledge base site
 - Opening docs in-app when preview works

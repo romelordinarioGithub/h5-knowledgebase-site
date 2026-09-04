@@ -30,6 +30,15 @@ export function saveCachedCatalog(payload) {
   }
 }
 
+/** Drop browser catalog cache so the next fetch can replace stale FAQ/content. */
+export function clearCachedCatalog() {
+  try {
+    localStorage.removeItem(CATALOG_CACHE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 /**
  * @param {number | string | undefined} value
  */

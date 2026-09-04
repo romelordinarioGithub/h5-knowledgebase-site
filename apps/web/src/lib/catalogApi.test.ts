@@ -29,11 +29,28 @@ describe('catalogApi', () => {
     expect(result.count).toBe(1);
     expect(result.rows[0].id).toBe('row-1');
     expect(fetch).toHaveBeenCalledWith(
-      '/api/catalog',
+      expect.stringMatching(/\/api\/catalog\/?$/),
       expect.objectContaining({
         method: 'GET',
+        cache: 'default',
         headers: expect.objectContaining({ Accept: 'application/json' }),
       })
+    );
+  });
+
+  it('fetchCatalog({ force: true }) adds refresh=1 and cache-bust ts', async () => {
+    const payload = makeCatalogPayload([makeRow({ id: 'row-1' })]);
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    await fetchCatalog({ force: true });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/catalog\?.*refresh=1.*ts=/),
+      expect.objectContaining({ cache: 'no-store' })
     );
   });
 
